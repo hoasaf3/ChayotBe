@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>ChayotBe Histogram</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #e0f7fa; /* light blue */
+      color: #004d40;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      text-align: center;
+    }
+    h1 {
+      margin-bottom: 20px;
+    }
+    canvas {
+      background: #ffffff;
+      border: 1px solid #b2ebf2;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+    }
+    .footer {
+      font-size: 0.9em;
+      margin-top: 20px;
+    }
+    a {
+      color: #00695c;
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>ChayotBe Histogram</h1>
+    <canvas id="histogramChart" width="400" height="200"></canvas>
+    <div class="footer">
+      <p>View the data file here: <a href="YOUR_GOOGLE_SHEETS_VIEW_LINK_HERE" target="_blank">Google Sheets</a></p>
+    </div>
+  </div>
+  
+  <!-- Include Chart.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Include Papa Parse from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@latest/papaparse.min.js"></script>
+  <script>
+    // Replace this with your published Google Sheets CSV URL
+    const csvUrl = 'YOUR_GOOGLE_SHEETS_CSV_URL_HERE';
+    
+    // Fetch and parse CSV data
+    fetch(csvUrl)
+      .then(response => response.text())
+      .then(csvData => {
+        Papa.parse(csvData, {
+          header: true, // Assumes the first row is a header
+          complete: function(results) {
+            // Assuming your Google Sheet has a column called 'Animal'
+            const data = results.data;
+            const histogram = {};
+            data.forEach(row => {
+              let animal = row['Animal'];
+              if (animal) {
+                animal = animal.trim();
+                const firstLetter = animal.charAt(0);
+                histogram[firstLetter] = (histogram[firstLetter] || 0) + 1;
+              }
+            });
+            // Prepare labels and counts arrays; sort labels alphabetically
+            const labels = Object.keys(histogram).sort();
+            const counts = labels.map(letter => histogram[letter]);
+            
+            // Create the Chart.js bar chart
+            const ctx = document.getElementById('histogramChart').getContext('2d');
+            new Chart(ctx, {
+              type: 'bar',
+              data: {
+                labels: labels,
+                datasets: [{
+                  label: 'Number of Animals',
+                  data: counts,
+                  backgroundColor: 'rgba(0, 150, 136, 0.6)',
+                  borderColor: 'rgba(0, 150, 136, 1)',
+                  borderWidth: 1
+                }]
+              },
+              options: {
+                scales: {
+                  y: {
+                    beginAtZero: true,
+                    ticks: {
+                      precision: 0
+                    }
+                  }
+                },
+                plugins: {
+                  legend: {
+                    display: false
+                  }
+                }
+              }
+            });
+          }
+        });
+      })
+      .catch(error => {
+        console.error('Error fetching or parsing CSV:', error);
+      });
+  </script>
+</body>
+</html>
