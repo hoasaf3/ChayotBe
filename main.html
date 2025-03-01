@@ -1,21 +1,21 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="he" dir="rtl">
 <head>
   <meta charset="UTF-8">
   <title>ChayotBe Histogram</title>
   <style>
     body {
       font-family: Arial, sans-serif;
-      background: #e0f7fa; /* light blue */
+      background: #e0f7fa; /* Light blue */
       color: #004d40;
       margin: 0;
       padding: 0;
+      text-align: center;
     }
     .container {
       max-width: 800px;
       margin: 0 auto;
       padding: 20px;
-      text-align: center;
     }
     h1 {
       margin-bottom: 20px;
@@ -41,10 +41,10 @@
 </head>
 <body>
   <div class="container">
-    <h1>ChayotBe Histogram</h1>
+    <h1>חיות ב-</h1>
     <canvas id="histogramChart" width="400" height="200"></canvas>
     <div class="footer">
-      <p>View the data file here: <a href="YOUR_GOOGLE_SHEETS_VIEW_LINK_HERE" target="_blank">Google Sheets</a></p>
+      <p>💾 שמות החיות: <a href="https://docs.google.com/spreadsheets/d/17jQ8MS_BkoSS1J9AUFF7_f6NBFZOJSnNA-88XmoG68Q/edit?usp=sharing" target="_blank">Google Sheets</a></p>
     </div>
   </div>
   
@@ -52,40 +52,43 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <!-- Include Papa Parse from CDN -->
   <script src="https://cdn.jsdelivr.net/npm/papaparse@latest/papaparse.min.js"></script>
+
   <script>
-    // Replace this with your published Google Sheets CSV URL
-    const csvUrl = 'YOUR_GOOGLE_SHEETS_CSV_URL_HERE';
-    
-    // Fetch and parse CSV data
-    fetch(csvUrl)
+    const csvUrl = 'https://api.cors.lol/?url=https://docs.google.com/spreadsheets/d/e/2PACX-1vQveKuqXe2jO4w5AtzzRQtggkA8eKnNSEvg2HR-viEY4cuJr9uKLe1Ghd3k8fZnLlhN_Nv3hwn8D-KL/pub?output=csv';
+    fetch(csvUrl, {
+    method: 'GET',  // Explicitly set GET method
+    })
       .then(response => response.text())
       .then(csvData => {
         Papa.parse(csvData, {
-          header: true, // Assumes the first row is a header
+          header: true, // Assumes the first row is the header (Hebrew letters)
           complete: function(results) {
-            // Assuming your Google Sheet has a column called 'Animal'
             const data = results.data;
             const histogram = {};
-            data.forEach(row => {
-              let animal = row['Animal'];
-              if (animal) {
-                animal = animal.trim();
-                const firstLetter = animal.charAt(0);
-                histogram[firstLetter] = (histogram[firstLetter] || 0) + 1;
-              }
+            console.info("shalom");
+
+            // Iterate over columns (each column is a Hebrew letter)
+            const headers = Object.keys(data[0]).filter(letter => letter.trim() !== ""); // Filter valid letters
+            headers.forEach(letter => {
+              histogram[letter] = data.reduce((count, row) => row[letter]?.trim() ? count + 1 : count, 0);
             });
-            // Prepare labels and counts arrays; sort labels alphabetically
-            const labels = Object.keys(histogram).sort();
-            const counts = labels.map(letter => histogram[letter]);
-            
+
+            // Sort Hebrew letters from right to left
+            let sortedLetters = headers.sort((a, b) => b.localeCompare(a));
+            let counts = sortedLetters.map(letter => histogram[letter]);
+
+            // Reverse the order for RTL display
+            sortedLetters.reverse();
+            counts.reverse();
+
             // Create the Chart.js bar chart
             const ctx = document.getElementById('histogramChart').getContext('2d');
             new Chart(ctx, {
               type: 'bar',
               data: {
-                labels: labels,
+                labels: sortedLetters,
                 datasets: [{
-                  label: 'Number of Animals',
+                  label: 'מספר חיות לפי אות',
                   data: counts,
                   backgroundColor: 'rgba(0, 150, 136, 0.6)',
                   borderColor: 'rgba(0, 150, 136, 1)',
@@ -93,18 +96,16 @@
                 }]
               },
               options: {
+                responsive: true,
                 scales: {
+                  x: { reverse: true }, // Hebrew is RTL
                   y: {
                     beginAtZero: true,
-                    ticks: {
-                      precision: 0
-                    }
+                    ticks: { precision: 0 }
                   }
                 },
                 plugins: {
-                  legend: {
-                    display: false
-                  }
+                  legend: { display: false }
                 }
               }
             });
